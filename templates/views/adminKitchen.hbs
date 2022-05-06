@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلف دانشگاه پیام نور واحد همدان</title>
+    <link href="/images/favicon.png" rel="icon">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="main-content">
+        {{>adminHeader}}
+        <div class="adminMainContent">
+            <h4 id="kitchenTitle">کارکنان فعال</h4>
+            <div class="kitchenContainer"></div>
+            <h4 id="addStaffTitle">اضافه کردن</h4>
+            <input id="staffName" class="dayInput" type="text" placeholder="نام (پیشفرض: سلف)" required>
+            <input id="staffUser" class="dayInput" type="text" placeholder="نام کاربری" required>
+            <input id="staffPass" class="dayInput" type="password" placeholder="رمز" required> <br>
+            <button id="addStaff">اضافه کردن</button>  
+        </div>
+    </div>
+    {{>footer}}
+    <script src="/js/admin/adminGeneral.js"></script>
+    <script src="/js/admin/adminKitchen.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلف دانشگاه پیام نور واحد همدان</title>
+    <link href="/images/favicon.png" rel="icon">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="main-content">
+        {{>adminHeader}}
+        <h2 id="DaysTitle">مدیریت روز ها</h3>
+        <div class="adminMainContent">
+            <div class="dayManeger">
+                <h4 id="addDayTitle">اضافه کردن روز</h4>
+                <p>توضیحات روز:</p>
+                <input id="day" class="dayInput" type="text" placeholder="روز (مثلا: 12)" required>
+                <input id="month" class="dayInput" type="text" placeholder="ماه (مثلا: 7)" required>
+                <input id="year" class="dayInput" type="text" placeholder="سال (مثلا: 1401)" required> <br>
+                <input id="description" class="dayInput" type="text" placeholder="عنوان غذا" required>
+                <input id="price" class="dayInput" type="text" placeholder="قیمت غذا به تومان" required>
+                <input id="capacity" class="dayInput" type="text" placeholder="ظرفیت" required> <br>
+                <button id="addDayButton">ثبت</button>
+            </div>
+            <div class="dayManeger">
+                <h4 id="editDayTitle">ویرایش روز</h4>
+                <label>
+                    انتخاب روز: <select name="daySelector" class="daySelector" id="daySelectorToEdit">
+                        <option value="" disabled selected>روز را انتخاب کنید</option>
+                    </select>
+                </label>
+                <p>توضیحات روز:</p>
+                <input id="dayEdit" class="dayInput" type="text" placeholder="روز (مثلا: 12)" disabled required>
+                <input id="monthEdit" class="dayInput" type="text" placeholder="ماه (مثلا: 7)" disabled required>
+                <input id="yearEdit" class="dayInput" type="text" placeholder="سال (مثلا: 1401)" disabled required> <br>
+                <input id="descriptionEdit" class="dayInput" type="text" placeholder="عنوان غذا" disabled required>
+                <input id="priceEdit" class="dayInput" type="text" placeholder="قیمت غذا به تومان" disabled required>
+                <input id="capacityEdit" class="dayInput" type="text" placeholder="ظرفیت" disabled required> <br>
+                <button id="editDayButton">ثبت</button>
+            </div>
+            <div class="dayManeger">
+                <h4 id="disableDayTitle">فعال / غیرفعال کردن روز</h4>
+                <label>
+                    انتخاب روز: <select name="daySelector" class="daySelector" id="daySelectorToDisable">
+                        <option value="" disabled selected>روز را انتخاب کنید</option>
+                    </select> 
+                </label>
+                <button class="activeDay">فعال</button>
+                <button class="disableDay">غیرفعال</button>
+            </div>
+            <div class="dayManeger">
+                <h4 id="deleteDayTitle">حذف روز</h4>
+                <label>
+                    انتخاب روز: <select name="daySelector" class="daySelector" id="daySelectorToDelete">
+                        <option value="" disabled selected>روز را انتخاب کنید</option>
+                    </select> 
+                </label>
+                <button class="DeleteDay">حذف</button>
+            </div>
+        </div>
+    </div>
+    {{>footer}}
+    <script src="/js/admin/adminGeneral.js"></script>
+    <script src="/js/admin/adminDays.js"></script>
+</body>
+</html>

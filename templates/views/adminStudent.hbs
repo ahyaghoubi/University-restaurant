@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلف دانشگاه پیام نور واحد همدان</title>
+    <link href="/images/favicon.png" rel="icon">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="main-content">
+        {{>adminHeader}}
+        <div class="adminMainContent">
+            <h4 id="addStudnetTitle">اضافه کردن دانشجو</h4>
+            <input id="studentFirstname" class="dayInput" type="text" placeholder="نام" required>
+            <input id="studentLastname" class="dayInput" type="text" placeholder="نام خانوادگی" required> <br>
+            <input id="studentNumber" class="dayInput"type="text" placeholder="شماره دانشجویی" required>
+            <input id="studentPass" class="dayInput" type="password" placeholder="رمز" required> <br>
+            <button id="addStudent">اضافه کردن</button>
+            
+            <h4 id="editStudentTitle">ویرایش دانشجو</h4>
+            <input id="studentNumberToSearch" class="dayInput" type="text" placeholder="شماره دانشجویی">
+            <button id="findStundet">پیدا کردن</button> <br>
+
+            <input id="studentFirstnameToEdit" class="dayInput" type="text" placeholder="نام" required disabled>
+            <input id="studentLastnameToEdit" class="dayInput" type="text" placeholder="نام خانوادگی" required disabled> <br>
+            <input id="studentNumberToEdit" class="dayInput"type="text" placeholder="شماره دانشجویی" required disabled> 
+            <input id="studentCredit" class="dayInput"type="text" placeholder="اعتبار دانشجو" required disabled> <br>
+            <button id="editStudent">ویرایش</button>
+            
+            <h4 id="deleteStudentTitle">حذف دانشجو</h4>
+            <input id="studentNumberToDelete" class="dayInput" type="text" placeholder="شماره دانشجویی">
+            <button id="deleteStundet">حذف دانشجو</button> <br>
+            <p id="MessageForDeletedStudent"></p>
+        </div>
+    </div>
+    {{>footer}}
+    <script src="/js/admin/adminGeneral.js"></script>
+    <script src="/js/admin/adminStudent.js"></script>
+</body>
+</html>
