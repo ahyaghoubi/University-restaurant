@@ -22,6 +22,7 @@ const deleteStundetButton = document.querySelector('#deleteStundet')
 const MessageForDeletedStudent = document.querySelector('#MessageForDeletedStudent')
 
 addStudentButton.addEventListener('click', (e) => {
+    addStudnetTitle.textContent = 'اضافه کردن دانشجو'
     errorMessage(1, addStudnetTitle)
     addStudentButton.disabled = true
     fetch('/api/admin/student', {
