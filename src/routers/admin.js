@@ -21,26 +21,31 @@ const router = new express.Router()
 //     }
 // })
 
-router.post('/api/admin/login', async (req , res) => {
+// Route for admin login
+router.post('/api/admin/login', async (req, res) => {
     try {
         const admin = await Admin.findByCredentials(req.body.username, req.body.password)
         const token = await admin.generateAuthToken()
         res.send({ admin, token })
     } catch (e) {
-        res.status(400).send()
+        console.error('Login error:', e)
+        res.status(400).send({ error: 'Unable to login' })
     }
 })
 
-router.post('/api/admin/logout',adminAuth, async (req, res) => {
+// Route for admin logout
+router.post('/api/admin/logout', adminAuth, async (req, res) => {
     try {
         req.admin.tokens = []
         await req.admin.save()
         res.send()
     } catch (e) {
-        res.status(500).send()
+        console.error('Logout error:', e)
+        res.status(500).send({ error: 'Unable to logout' })
     }
 })
 
+// Route for updating admin password
 router.patch('/api/admin', adminAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['currentPass', 'newPass', 'repeatNewPass']
@@ -59,36 +64,43 @@ router.patch('/api/admin', adminAuth, async (req, res) => {
     }
 })
 
+// Route for creating a new student
 router.post('/api/admin/student', adminAuth, async (req, res) => {
     try {
         const student = new Student(req.body)
         await student.save()
         res.status(201).send(student)
     } catch (e) {
-        res.status(400).send()
+        console.error('Error creating student:', e)
+        res.status(400).send({ error: 'Unable to create student' })
     }
 })
 
+// Route for fetching a single student by student number
 router.post('/api/admin/onestudent', adminAuth, async (req, res) => {
     try {
         const student = await Student.findOne({ studentNumber: req.body.studentNumber })
-        if (!student) return res.status(404).send('Could Not find student!')
+        if (!student) return res.status(404).send({ error: 'Could not find student!' })
         res.send(student)
     } catch (e) {
-        res.status(400).send()
+        console.error('Error fetching student:', e)
+        res.status(400).send({ error: 'Unable to fetch student' })
     }
 })
 
+// Route for fetching all students
 router.get('/api/admin/students', adminAuth, async (req, res) => {
     try {
         const students = await Student.find({})
         const numofstudents = students.length
         res.send({ students, numofstudents })
     } catch (e) {
-        res.status(400).send()
+        console.error('Error fetching students:', e)
+        res.status(400).send({ error: 'Unable to fetch students' })
     }
 })
 
+// Route for updating a student
 router.patch('/api/admin/student', adminAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['firstName', 'lastName', 'studentNumber', 'credit']
@@ -101,11 +113,10 @@ router.patch('/api/admin/student', adminAuth, async (req, res) => {
     try {
         const student = await Student.findOne({ studentNumber: req.body.studentNumber })
 
-
-        if(!student) {
-            throw new Error('Studnet does not exist')
+        if (!student) {
+            throw new Error('Student does not exist')
         }
-        
+
         updates.forEach((update) => student[update] = req.body[update])
         await student.save()
         res.send(student)
@@ -114,12 +125,14 @@ router.patch('/api/admin/student', adminAuth, async (req, res) => {
     }
 })
 
+// Route for fetching student orders
 router.post('/api/admin/studentorders', adminAuth, async (req, res) => {
     try {
         const student = await Student.findOne({ studentNumber: req.body.studentNumber })
-        const sort = {
-            date: 1
+        if (!student) {
+            return res.status(404).send({ error: 'Student not found' })
         }
+        const sort = { date: 1 }
         await student.populate({
             path: 'orders',
             options: {
@@ -128,7 +141,7 @@ router.post('/api/admin/studentorders', adminAuth, async (req, res) => {
                 sort
             }
         })
-        
+
         const now = moment().unix()
         let ordersWithFaDes = []
         student.orders.forEach((order) => {
@@ -139,7 +152,7 @@ router.post('/api/admin/studentorders', adminAuth, async (req, res) => {
                     price: order.price,
                     date: order.date,
                     year: m.jYear(),
-                    month:m.format('jMMMM'),
+                    month: m.format('jMMMM'),
                     day: m.jDate(),
                     dow: m.format('dddd')
                 })
@@ -147,18 +160,19 @@ router.post('/api/admin/studentorders', adminAuth, async (req, res) => {
         })
         res.send({ student, studentOrders: ordersWithFaDes })
     } catch (e) {
-        res.status(400).send()
+        console.error('Error fetching student orders:', e)
+        res.status(400).send({ error: 'Unable to fetch student orders' })
     }
 })
 
+// Route for deleting student orders
 router.delete('/api/admin/studentorders', adminAuth, async (req, res) => {
     try {
-        
         const order = await Orders.findOneAndDelete({
             owner: req.body.student._id,
             date: req.body.date
         })
-        
+
         const student = await Student.raiseCredit(req.body.student.studentNumber, order.price)
         const payment = new Payments({
             returnmoney: true,
@@ -168,23 +182,22 @@ router.delete('/api/admin/studentorders', adminAuth, async (req, res) => {
             owner: student._id
         })
         await payment.save()
-        
+
         await Days.raiseCapacityByOne(req.body.date)
-        
+
         res.send(order)
     } catch (e) {
         res.status(500).send(e)
     }
-
 })
 
+// Route for fetching student payments
 router.post('/api/admin/studentpayments', adminAuth, async (req, res) => {
     try {
         const student = await Student.findOne({ studentNumber: req.body.studentNumber })
+        if (!student) return res.status(404).send({ error: 'Student not found' })
 
-        const sort = {
-            createdAt: 1
-        }
+        const sort = { createdAt: 1 }
         await student.populate({
             path: 'payments',
             options: {
@@ -195,7 +208,7 @@ router.post('/api/admin/studentpayments', adminAuth, async (req, res) => {
         })
         let paymentsWithFaDes = []
         student.payments.forEach((payment) => {
-            if(payment.dateofpaidday) {
+            if (payment.dateofpaidday) {
                 const m = moment(payment._id.getTimestamp())
                 const paidDayDate = moment.unix(payment.dateofpaidday)
                 paymentsWithFaDes.push({
@@ -220,27 +233,29 @@ router.post('/api/admin/studentpayments', adminAuth, async (req, res) => {
                     date: moment(payment._id.getTimestamp()).unix()
                 })
             }
-            
         })
         paymentsWithFaDes.sort((a, b) => a.date - b.date)
         res.send({ student, studentPayments: paymentsWithFaDes })
     } catch (e) {
-        res.status(400).send()
+        console.error('Error fetching student payments:', e)
+        res.status(400).send({ error: 'Unable to fetch student payments' })
     }
 })
 
+// Route for deleting a student
 router.delete('/api/admin/student', adminAuth, async (req, res) => {
     try {
         const student = await Student.findOneAndDelete({ studentNumber: req.body.studentNumber })
 
         !student ? res.status(404).send() :
-        
+
         res.send(student)
     } catch (e) {
         res.status(500).send(e)
     }
 })
 
+// Route for creating a new kitchen
 router.post('/api/admin/kitchen', adminAuth, async (req, res) => {
     const kitchen = new Kitchen(req.body)
 
@@ -252,6 +267,7 @@ router.post('/api/admin/kitchen', adminAuth, async (req, res) => {
     }
 })
 
+// Route for fetching all kitchens
 router.get('/api/admin/kitchen', adminAuth, async (req, res) => {
     try {
         const kitchens = await Kitchen.find()
@@ -261,6 +277,7 @@ router.get('/api/admin/kitchen', adminAuth, async (req, res) => {
     }
 })
 
+// Route for updating a kitchen
 router.patch('/api/admin/kitchen', adminAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['name', 'username','password']
@@ -276,7 +293,7 @@ router.patch('/api/admin/kitchen', adminAuth, async (req, res) => {
         if(!kitchen) {
             throw new Error('Kitchen does not exist')
         }
-        
+
         updates.forEach((update) => kitchen[update] = req.body[update])
         await kitchen.save()
         res.send(kitchen)
@@ -285,18 +302,20 @@ router.patch('/api/admin/kitchen', adminAuth, async (req, res) => {
     }
 })
 
+// Route for deleting a kitchen
 router.delete('/api/admin/kitchen', adminAuth, async (req, res) => {
     try {
         const kitchen = await Kitchen.findOneAndDelete({ username: req.body.username })
 
         !kitchen ? res.status(404).send() :
-        
+
         res.send(kitchen)
     } catch (e) {
         res.status(500).send(e)
     }
 })
 
+// Route for creating a new day
 router.post('/api/admin/day', adminAuth, async (req, res) => {
     try {
         const date = moment(`${req.body.day.year}/${req.body.day.monthInNum}/${req.body.day.day}`, 'jYYYY/jM/jD').add(12, 'hours').unix()
@@ -308,13 +327,14 @@ router.post('/api/admin/day', adminAuth, async (req, res) => {
         }
         const day = new Days(dayToSave)
         await day.save()
-
         res.status(201).send(day)
     } catch (e) {
-        res.status(400).send()
+        console.error('Error creating day:', e)
+        res.status(400).send({ error: 'Unable to create day' })
     }
 })
 
+// Route for fetching all days
 router.get('/api/admin/day', adminAuth, async (req, res) => {
     try {
         let listOfDays = []
@@ -349,6 +369,7 @@ router.get('/api/admin/day', adminAuth, async (req, res) => {
     }
 })
 
+// Route for updating a day
 router.patch('/api/admin/day', adminAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['description', 'price', 'year', 'month', 'day', 'capacity', 'date', 'monthInNum']
@@ -357,14 +378,14 @@ router.patch('/api/admin/day', adminAuth, async (req, res) => {
     if (!isValidOperation) {
         return res.status(400).send({ error: 'Invalid updates!' })
     }
-    
+
     try {
         const day = await Days.findOne({ date: req.body.date })
 
         if(!day) {
             throw new Error('Day does not exist')
         }
-        
+
         const date = moment(`${req.body.year}/${req.body.monthInNum}/${req.body.day}`, 'jYYYY/jM/jD').unix()
         day.description = req.body.description
         day.price = req.body.price
@@ -384,24 +405,26 @@ router.patch('/api/admin/day', adminAuth, async (req, res) => {
     }
 })
 
+// Route for deleting a day
 router.delete('/api/admin/day', adminAuth, async (req, res) => {
     try {
         const day = await Days.findOneAndDelete({ date: req.body.date })
         const orders = await Orders.find({ date: req.body.date })
         for (const order of orders) {
             const st = await order.populate('owner')
-            st.owner.credit += order.price 
+            st.owner.credit += order.price
             st.owner.save()
         }
         await Orders.deleteMany({ date: req.body.date })
         !day ? res.status(404).send() :
-        
+
         res.send(day)
     } catch (e) {
         res.status(500).send(e)
     }
 })
 
+// Route for activating/deactivating a day
 router.post('/api/admin/activeDay', adminAuth, async (req, res) => {
     try {
         const day = await Days.findOne({ date: req.body.date })
@@ -409,7 +432,7 @@ router.post('/api/admin/activeDay', adminAuth, async (req, res) => {
         if(!day) {
             throw new Error('Day does not exist')
         }
-        
+
         day.active = req.body.value
         await day.save()
         res.send(day)
@@ -418,6 +441,7 @@ router.post('/api/admin/activeDay', adminAuth, async (req, res) => {
     }
 })
 
+// Route for fetching a single day by date
 router.post('/api/admin/getoneDay', adminAuth, async (req, res) => {
     try {
         const day = await Days.findOne({ date: req.body.date })
@@ -440,16 +464,17 @@ router.post('/api/admin/getoneDay', adminAuth, async (req, res) => {
     }
 })
 
+// Route for fetching students who ordered on a specific day
 router.post('/api/admin/oneDay', adminAuth, async (req, res) => {
     try {
         const orders = await Orders.find({ date: req.body.date })
-        
+
         let students = []
         for (const order of orders) {
             const student = await Student.findById(order.owner)
             students.push(student)
         }
-        
+
         res.send(students)
     } catch (e) {
         res.status(400).send(e)

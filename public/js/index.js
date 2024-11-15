@@ -39,6 +39,7 @@ passInput.setAttribute('required', '')
 const studentLoginButton = document.createElement('button')
 studentLoginButton.textContent = 'ورود'
 
+// Error handler function to handle different response statuses
 const errorHandler = (res) => {
     if (res.status === 400) throw new Error('(عملیات ناموفق لطفا دوباره تلاش کنید)')
     else if (res.status === 401 || res.status === 403) {
@@ -58,26 +59,27 @@ const errorHandler = (res) => {
 const studentLoginFunc = async (studentNumber, password) => {
     studentLoginTitle.textContent = 'ورود دانشجو (درحال ورود...)'
     studentLoginButton.disabled = true
-    fetch('/api/student/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            studentNumber,
-            password
+    try {
+        const response = await fetch('/api/student/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                studentNumber,
+                password
+            })
         })
-    }).then(errorHandler).then((response) => {
-        response.json().then((data) => {
-            studentLoginTitle.textContent = `ورود دانشجو (${data.firstName} ${data.lastName} خوش آمدید)`
-            localStorage.setItem("token", data.token)
-            location.assign('/student')            
-            studentLoginButton.disabled = false
-        })   
-    }).catch((e) =>{
+        errorHandler(response)
+        const data = await response.json()
+        studentLoginTitle.textContent = `ورود دانشجو (${data.firstName} ${data.lastName} خوش آمدید)`
+        localStorage.setItem("token", data.token)
+        location.assign('/student')
+    } catch (e) {
         studentLoginTitle.textContent = 'ورود دانشجو (ورود نا موفق لطفا دوباره تلاش کنید.)'
+    } finally {
         studentLoginButton.disabled = false
-    })
+    }
 }
 
 // Student login button event handler
@@ -127,7 +129,7 @@ helpLink.addEventListener('click', (e) => {
     studentLoginButton.disabled = false
     MC.textContent = ''
     const helps = [
-        'تماس با شماره: 09027079997',
+        'تماس با شماره: 09123467890',
         'پشتیبانی واتس اپ'
     ]
 

@@ -1,15 +1,19 @@
 'use strict'
 
+// Select the container for available days, total price message, pay button, pay with credit button, and title for days to buy
 const availableDaysContainer = document.querySelector('.availableDaysContainer')
 const totalPriceMessage = document.querySelector('#totalPrice')
 const payButton = document.querySelector('#pay')
 const payWithCreditButton = document.querySelector('#payWithCredit')
 const dayToBuyTitle = document.querySelector('#dayToBuyTitle')
+
+// Initialize arrays to store orders, days, and cart items, and a variable for total price
 let orders = []
 let days = []
 let cart = []
 let total = 0
 
+// Function to generate the total price message
 const generateTotalPriceMessage = () => {
     total = 0
     cart.forEach((item) => {
@@ -18,15 +22,17 @@ const generateTotalPriceMessage = () => {
     totalPriceMessage.textContent = `جمع مبلغ: ${total} تومان`
 }
 
+// Function to generate the DOM structure for an available day
 const generateAvailableDayDOM = (day) => {
     const AvailableDay = document.createElement('div')
     AvailableDay.className = 'AvailableDay'
 
-    const lable = document.createElement('label')
-    lable.className = 'checkboxLable'
+    const label = document.createElement('label')
+    label.className = 'checkboxLabel'
     const checkbox = document.createElement('input')
     checkbox.setAttribute('type', 'checkbox')
 
+    // Event listener for checkbox change event
     checkbox.addEventListener('change', (e) => {
         if(e.target.checked) {
             cart.push(day)
@@ -37,14 +43,17 @@ const generateAvailableDayDOM = (day) => {
             generateTotalPriceMessage()
         }
     })
+
     const dayDes = document.createElement('p')
     dayDes.textContent = `${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description} - مبلغ ${day.price}`
-    lable.appendChild(checkbox)
-    lable.appendChild(dayDes)
+    label.appendChild(checkbox)
+    label.appendChild(dayDes)
 
-    return lable
+    AvailableDay.appendChild(label)
+    return AvailableDay
 }
 
+// Function to filter out days that have already been ordered
 const filterDaysFunc = (rawDays) => {
     let filteredDays = rawDays
     orders.forEach((order) => {
@@ -54,6 +63,7 @@ const filterDaysFunc = (rawDays) => {
     return filteredDays
 }
 
+// Function to render available days
 const renderDays = (rawDays) => {
     const filteredDays = filterDaysFunc(rawDays)
     availableDaysContainer.textContent = ''
@@ -64,11 +74,12 @@ const renderDays = (rawDays) => {
     } else {
         filteredDays.forEach((day) => {
             const dayDOM = generateAvailableDayDOM(day)
-            availableDaysContainer.appendChild(dayDOM)    
+            availableDaysContainer.appendChild(dayDOM)
         })
     }
 }
 
+// Function to fetch available days and orders from the server
 const getAvailableDays = () => {
     errorMessage(1, dayToBuyTitle)
     fetch('/api/student/getdays', {
@@ -97,8 +108,10 @@ const getAvailableDays = () => {
     })
 }
 
+// Fetch available days on page load
 getAvailableDays()
 
+// Event listener for pay button click event
 payButton.addEventListener('click', async (e) => {
     if (total > 0) {
         errorMessage(1, dayToBuyTitle)
@@ -127,6 +140,7 @@ payButton.addEventListener('click', async (e) => {
     }
 })
 
+// Event listener for pay with credit button click event
 payWithCreditButton.addEventListener('click', (e) => {
     if (total > 0) {
         errorMessage(1, dayToBuyTitle)
@@ -161,7 +175,7 @@ payWithCreditButton.addEventListener('click', (e) => {
                     cart = []
                     renderStudentMessage()
                     generateTotalPriceMessage()
-                    
+
                     dayToBuyTitle.textContent = 'ژتون های فعال برای خرید (خرید موفق)'
                 }).catch((e) => {
                     errorMessage(2, dayToBuyTitle)

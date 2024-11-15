@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
+// Define the kitchen schema with fields and validation
 const kitchenSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -26,11 +27,11 @@ const kitchenSchema = new mongoose.Schema({
             required: true
         }
     }]
-},{
+}, {
     timestamps: true
 })
 
-
+// Remove sensitive information before sending the kitchen object
 kitchenSchema.methods.toJSON = function () {
     const kitchen = this
     const kitchenObject = kitchen.toObject()
@@ -41,7 +42,7 @@ kitchenSchema.methods.toJSON = function () {
     return kitchenObject
 }
 
-
+// Generate an authentication token for the kitchen
 kitchenSchema.methods.generateAuthToken = async function () {
     const kitchen = this
     const token = jwt.sign({ _id: kitchen._id.toString() }, process.env.JWT_SECRET)
@@ -51,6 +52,7 @@ kitchenSchema.methods.generateAuthToken = async function () {
     return token
 }
 
+// Find a kitchen by their credentials
 kitchenSchema.statics.findByCredentials = async (username, password) => {
     const kitchen = await Kitchen.findOne({ username })
 
@@ -67,6 +69,7 @@ kitchenSchema.statics.findByCredentials = async (username, password) => {
     return kitchen
 }
 
+// Hash the password before saving the kitchen document
 kitchenSchema.pre('save', async function (next) {
     const kitchen = this
 
@@ -77,6 +80,7 @@ kitchenSchema.pre('save', async function (next) {
     next()
 })
 
+// Create the Kitchen model from the schema
 const Kitchen = mongoose.model('Kitchen', kitchenSchema)
 
 module.exports = Kitchen

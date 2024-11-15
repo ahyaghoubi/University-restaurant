@@ -8,7 +8,8 @@ const Orders = require('../models/orders')
 const Days = require('../models/days')
 const router = new express.Router()
 
-router.post('/api/kitchen/login', async (req , res) => {
+// Route for kitchen login
+router.post('/api/kitchen/login', async (req, res) => {
     try {
         const kitchen = await Kitchen.findByCredentials(req.body.username, req.body.password)
         const token = await kitchen.generateAuthToken()
@@ -18,7 +19,8 @@ router.post('/api/kitchen/login', async (req , res) => {
     }
 })
 
-router.post('/api/kitchen/logout',kitchenAuth , async (req, res) => {
+// Route for kitchen logout
+router.post('/api/kitchen/logout', kitchenAuth, async (req, res) => {
     try {
         req.kitchen.tokens = []
         await req.kitchen.save()
@@ -28,6 +30,7 @@ router.post('/api/kitchen/logout',kitchenAuth , async (req, res) => {
     }
 })
 
+// Route for updating kitchen password
 router.patch('/api/kitchen', kitchenAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['currentPass', 'newPass', 'repeatNewPass']
@@ -36,19 +39,17 @@ router.patch('/api/kitchen', kitchenAuth, async (req, res) => {
         return res.status(400).send({ error: 'Invalid updates!' })
     }
     try {
-        if (!req.body.newPass === req.body.repeatNewPass) {
+        if (req.body.newPass !== req.body.repeatNewPass) {
             return res.status(400).send({ error: 'Passwords do NOT match!' })
         }
         const kitchen = await Kitchen.findOne({ username: req.kitchen.username })
         if (!kitchen) {
-            throw new Error('Unable to fine kitchen!')
+            throw new Error('Unable to find kitchen!')
         }
         const isMatch = await bcrypt.compare(req.body.currentPass, kitchen.password)
-        
         if (!isMatch) {
             throw new Error('Old password is wrong')
         }
-        
         kitchen.password = req.body.newPass
         await kitchen.save()
         res.send(kitchen)
@@ -57,12 +58,11 @@ router.patch('/api/kitchen', kitchenAuth, async (req, res) => {
     }
 })
 
+// Route for fetching student orders
 router.post('/api/kitchen/studentorders', kitchenAuth, async (req, res) => {
     try {
         const student = await Student.findOne({ studentNumber: req.body.studentNumber })
-        const sort = {
-            date: 1
-        }
+        const sort = { date: 1 }
         await student.populate({
             path: 'orders',
             options: {
@@ -71,7 +71,7 @@ router.post('/api/kitchen/studentorders', kitchenAuth, async (req, res) => {
                 sort
             }
         })
-        
+
         const now = moment().unix()
         let ordersWithFaDes = []
         student.orders.forEach((order) => {
@@ -82,19 +82,20 @@ router.post('/api/kitchen/studentorders', kitchenAuth, async (req, res) => {
                     price: order.price,
                     date: order.date,
                     year: m.jYear(),
-                    month:m.format('jMMMM'),
+                    month: m.format('jMMMM'),
                     day: m.jDate(),
                     dow: m.format('dddd')
                 })
             }
         })
 
-        res.send({student, studentOrders: ordersWithFaDes})
+        res.send({ student, studentOrders: ordersWithFaDes })
     } catch (e) {
         res.status(400).send()
     }
 })
 
+// Route for creating a new day
 router.post('/api/kitchen/day', kitchenAuth, async (req, res) => {
     try {
         const date = moment(`${req.body.day.year}/${req.body.day.monthInNum}/${req.body.day.day}`, 'jYYYY/jM/jD').add(12, 'hours').unix()
@@ -113,6 +114,7 @@ router.post('/api/kitchen/day', kitchenAuth, async (req, res) => {
     }
 })
 
+// Route for fetching all days
 router.get('/api/kitchen/day', kitchenAuth, async (req, res) => {
     try {
         let listOfDays = []
@@ -123,7 +125,7 @@ router.get('/api/kitchen/day', kitchenAuth, async (req, res) => {
         const days = await Days.find({})
         const now = moment().unix()
         days.forEach(async (day, index) => {
-            const orders = await Orders.find({date: day.date})
+            const orders = await Orders.find({ date: day.date })
             if (day.date > now) {
                 const m = moment.unix(day.date)
                 listOfDays.push({
@@ -131,7 +133,7 @@ router.get('/api/kitchen/day', kitchenAuth, async (req, res) => {
                     price: day.price,
                     date: day.date,
                     year: m.jYear(),
-                    month:m.format('jMMMM'),
+                    month: m.format('jMMMM'),
                     day: m.jDate(),
                     dow: m.format('dddd'),
                     numOfOrder: orders.length,
@@ -147,6 +149,7 @@ router.get('/api/kitchen/day', kitchenAuth, async (req, res) => {
     }
 })
 
+// Route for updating a day
 router.patch('/api/kitchen/day', kitchenAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['description', 'price', 'year', 'month', 'day', 'capacity', 'date', 'monthInNum']
@@ -155,19 +158,19 @@ router.patch('/api/kitchen/day', kitchenAuth, async (req, res) => {
     if (!isValidOperation) {
         return res.status(400).send({ error: 'Invalid updates!' })
     }
-    
+
     try {
         const day = await Days.findOne({ date: req.body.date })
 
-        if(!day) {
+        if (!day) {
             throw new Error('Day does not exist')
         }
-        
+
         const date = moment(`${req.body.year}/${req.body.monthInNum}/${req.body.day}`, 'jYYYY/jM/jD').unix()
         day.description = req.body.description
         day.price = req.body.price
         day.date = date
-        day.capacity = day.capacity
+        day.capacity = req.body.capacity
         if (day.isModified('date')) {
             const orders = await Orders.find({ date: req.body.date })
             for (const order of orders) {
@@ -182,32 +185,32 @@ router.patch('/api/kitchen/day', kitchenAuth, async (req, res) => {
     }
 })
 
+// Route for deleting a day
 router.delete('/api/kitchen/day', kitchenAuth, async (req, res) => {
     try {
         const day = await Days.findOneAndDelete({ date: req.body.date })
         const orders = await Orders.find({ date: req.body.date })
         for (const order of orders) {
             const st = await order.populate('owner')
-            st.owner.credit += order.price 
+            st.owner.credit += order.price
             st.owner.save()
         }
         await Orders.deleteMany({ date: req.body.date })
-        !day ? res.status(404).send() :
-        
-        res.send(day)
+        !day ? res.status(404).send() : res.send(day)
     } catch (e) {
         res.status(500).send(e)
     }
 })
 
+// Route for activating/deactivating a day
 router.post('/api/kitchen/activeDay', kitchenAuth, async (req, res) => {
     try {
         const day = await Days.findOne({ date: req.body.date })
 
-        if(!day) {
+        if (!day) {
             throw new Error('Day does not exist')
         }
-        
+
         day.active = req.body.value
         await day.save()
         res.send(day)

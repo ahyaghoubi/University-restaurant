@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const moment = require('moment')
 
+// Define the schema for a day
 const daySchema = new mongoose.Schema({
     description: {
         type: String,
@@ -12,7 +13,7 @@ const daySchema = new mongoose.Schema({
         required: true,
         validate(value) {
             if (value < 0) {
-                throw new Error('Price must be a postive number!')
+                throw new Error('Price must be a positive number!')
             }
         }
     },
@@ -41,11 +42,16 @@ const daySchema = new mongoose.Schema({
         default: true
     }
 }, {
-    timestamp: true
+    timestamps: true // Fixed typo from 'timestamp' to 'timestamps'
 })
 
+// Static method to reduce the capacity of a day by one
 daySchema.statics.reduceCapacityByOne = async (date) => {
     const day = await Days.findOne({ date })
+
+    if (!day) {
+        throw new Error('Day does not exist!')
+    }
 
     day.capacity = day.capacity - 1
 
@@ -54,12 +60,14 @@ daySchema.statics.reduceCapacityByOne = async (date) => {
     return day
 }
 
+// Static method to increase the capacity of a day by one
 daySchema.statics.raiseCapacityByOne = async (date) => {
     const day = await Days.findOne({ date })
 
     if (!day) {
         throw new Error('Day does not exist!')
     }
+
     day.capacity = day.capacity + 1
 
     await day.save()
@@ -67,6 +75,7 @@ daySchema.statics.raiseCapacityByOne = async (date) => {
     return day
 }
 
+// Create the Days model from the schema
 const Days = mongoose.model('Days', daySchema)
 
 module.exports = Days

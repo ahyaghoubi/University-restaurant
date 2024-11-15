@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 
+// Define the schema for a payment
 const paymentSchema = new mongoose.Schema({
     raisecredit: {
         type: Boolean,
@@ -18,7 +19,7 @@ const paymentSchema = new mongoose.Schema({
         required: true,
         validate(value) {
             if (value < 0) {
-                throw new Error('Amount must be a postive number!')
+                throw new Error('Amount must be a positive number!')
             }
         }
     },
@@ -27,7 +28,7 @@ const paymentSchema = new mongoose.Schema({
         required: true,
         validate(value) {
             if (value < 0) {
-                throw new Error('Credit must be a postive number!')
+                throw new Error('Credit must be a positive number!')
             }
         }
     },
@@ -41,9 +42,10 @@ const paymentSchema = new mongoose.Schema({
         ref: 'Student'
     }
 }, {
-    timestamp: true
+    timestamps: true // Fixed typo from 'timestamp' to 'timestamps'
 })
 
+// Create the Payments model from the schema
 const Payments = mongoose.model('Payments', paymentSchema)
 
 module.exports = Payments

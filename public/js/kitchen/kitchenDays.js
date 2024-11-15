@@ -1,16 +1,21 @@
 'use strict'
 
+// Retrieve the kitchen token from local storage
 const kitchenToken = localStorage.getItem('kitchenToken')
+// If no kitchen token is found, redirect to the kitchen login page
 if (!kitchenToken) location.assign('/kitchen/login')
 
+// Function to handle error messages
 const errorMessage = (code, messageContainer) => {
     if (code === 1) messageContainer.textContent = messageContainer.textContent.replace(' (عملیات ناموفق لطفا دوباره تلاش کنید)', '')
     if (code === 2) messageContainer.textContent = messageContainer.textContent + ' (عملیات ناموفق لطفا دوباره تلاش کنید)'
 }
 
+// Error handler function to handle different response statuses
 const errorHandler = (res) => {
     if (res.status === 400) throw new Error('(عملیات ناموفق لطفا دوباره تلاش کنید)')
     else if (res.status === 401 || res.status === 403) {
+        // Remove tokens and redirect to the home page on unauthorized access
         localStorage.removeItem('token')
         localStorage.removeItem('adminToken')
         localStorage.removeItem('kitchenToken')
@@ -23,8 +28,11 @@ const errorHandler = (res) => {
     else return res
 }
 
+// Select the kitchen logout button
 const kitchenLogout = document.querySelector('#kitchenLogout')
+// Event listener for the kitchen logout button click event
 kitchenLogout.addEventListener('click', (e) => {
+    // Send a POST request to logout the kitchen
     fetch('/api/kitchen/logout', {
         method: 'POST',
         headers: {
@@ -32,13 +40,15 @@ kitchenLogout.addEventListener('click', (e) => {
             'Authorization': 'Bearer ' + kitchenToken
         }
     }).then(errorHandler).then(() => {
+        // Remove the kitchen token and redirect to the home page
         localStorage.removeItem('kitchenToken')
         location.assign('/')
     }).catch((e) => {
-
+        // Handle any errors (optional: you can add error handling here)
     })
 })
 
+// Select the titles and input fields for adding, editing, disabling, and deleting days
 const addDayTitle = document.querySelector('#addDayTitle')
 const dayAdd = document.querySelector('#day')
 const monthAdd = document.querySelector('#month')
@@ -67,17 +77,25 @@ const deleteDayTitle = document.querySelector('#deleteDayTitle')
 const daySelectorToDelete = document.querySelector('#daySelectorToDelete')
 const DeleteDayButton = document.querySelector('.DeleteDay')
 
+// Initialize an array to store days
 let days = []
 
+// Function to populate the day selectors with options
 const options = () => {
+    // Clear existing options
+    daySelectorToDelete.innerHTML = ''
+    daySelectorToDisable.innerHTML = ''
+    daySelectorToEdit.innerHTML = ''
+
+    // Populate the delete day selector
     days.forEach((day) => {
         const option = document.createElement('option')
         option.value = day.date
         option.textContent = `${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description}`
-
         daySelectorToDelete.appendChild(option)
     })
 
+    // Populate the disable day selector
     days.forEach((day) => {
         const option = document.createElement('option')
         option.value = day.date
@@ -89,15 +107,16 @@ const options = () => {
         daySelectorToDisable.appendChild(option)
     })
 
+    // Populate the edit day selector
     days.forEach((day) => {
         const option = document.createElement('option')
         option.value = day.date
         option.textContent = `${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description}`
-
         daySelectorToEdit.appendChild(option)
     })
 }
 
+// Function to fetch days from the server
 const getDays = () => {
     fetch('/api/kitchen/day', {
         method: 'GET',
@@ -106,21 +125,25 @@ const getDays = () => {
             'Authorization': 'Bearer ' + kitchenToken
         }
     }).then(errorHandler).then((res) => res.json()).then((data) => {
+        // Store the fetched days and populate the selectors
         days = data.listOfDays
         options()
     }).catch((e) => {
-        
+        // Handle any errors (optional: you can add error handling here)
     })
 }
 
+// Fetch days on page load
 getDays()
 
+// Event listener for the day selector change event (edit)
 let date = 0
 daySelectorToEdit.addEventListener('change', (e) => {
     date = e.target.value
     const day = days.find((day) => {
         return day.date === Number(e.target.value)
     })
+    // Enable the input fields and populate them with the selected day's data
     dayEdit.removeAttribute('disabled')
     monthEdit.removeAttribute('disabled')
     yearEdit.removeAttribute('disabled')
@@ -135,6 +158,7 @@ daySelectorToEdit.addEventListener('change', (e) => {
     capacityEdit.value = day.capacity
 })
 
+// Function to edit a day
 const editDayFunc = (day) => {
     editDayButton.disabled = true
     editDayTitle.textContent = 'ویرایش روز (در حال ویرایش...)'
@@ -155,6 +179,7 @@ const editDayFunc = (day) => {
     })
 }
 
+// Function to add a day
 const addDayFunc = (day) => {
     addDayButton.disabled = true
     addDayTitle.textContent = 'اضافه کردن روز (در حال انجام)'
@@ -175,9 +200,9 @@ const addDayFunc = (day) => {
         errorMessage(2, addDayTitle)
         addDayButton.disabled = false
     })
-
 }
 
+// Event listener for the add day button click event
 addDayButton.addEventListener('click', (e) => {
     let day = {}
     day.day = Number(dayAdd.value)
@@ -194,6 +219,7 @@ addDayButton.addEventListener('click', (e) => {
     }
 })
 
+// Event listener for the edit day button click event
 editDayButton.addEventListener('click', (e) => {
     let day = {}
     day.day = Number(dayEdit.value)
@@ -211,11 +237,13 @@ editDayButton.addEventListener('click', (e) => {
     }
 })
 
+// Event listener for the day selector change event (disable)
 let dayToChangeActive = 0
 daySelectorToDisable.addEventListener('click', (e) => {
     dayToChangeActive = Number(e.target.value)
 })
 
+// Event listener for the active day button click event
 activeDayButton.addEventListener('click', (e) => {
     activeDayButton.disabled = true
     disableDayTitle.textContent = 'فعال / غیرفعال کردن روز (در حال انجام ...)'
@@ -236,10 +264,10 @@ activeDayButton.addEventListener('click', (e) => {
         disableDayTitle.textContent = 'فعال / غیرفعال کردن روز'
         errorMessage(2, disableDayTitle)
         activeDayButton.disabled = false
-
     })
 })
 
+// Event listener for the disable day button click event
 disableDayButton.addEventListener('click', (e) => {
     disableDayButton.disabled = true
     disableDayTitle.textContent = 'فعال / غیرفعال کردن روز (در حال انجام ...)'
@@ -263,11 +291,13 @@ disableDayButton.addEventListener('click', (e) => {
     })
 })
 
+// Event listener for the day selector change event (delete)
 let dateToDelete = 0
 daySelectorToDelete.addEventListener('change', (e) => {
     dateToDelete = Number(e.target.value)
 })
 
+// Event listener for the delete day button click event
 DeleteDayButton.addEventListener('click', (e) => {
     DeleteDayButton.disabled = true
     deleteDayTitle.textContent = 'حذف روز (در حال انجام ...)'

@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
+// Define the student schema with fields and validation
 const studentSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -49,6 +50,7 @@ const studentSchema = new mongoose.Schema({
     timestamps: true
 })
 
+// Define virtual fields for orders and payments
 studentSchema.virtual('orders', {
     ref: 'Orders',
     localField: '_id',
@@ -61,9 +63,11 @@ studentSchema.virtual('payments', {
     foreignField: 'owner'
 })
 
+// Ensure virtual fields are included in toObject and toJSON methods
 studentSchema.set('toObject', { virtuals: true })
 studentSchema.set('toJSON', { virtuals: true })
 
+// Remove sensitive information before sending the student object
 studentSchema.methods.toJSON = function () {
     const student = this
     const studentObject = student.toObject()
@@ -74,7 +78,7 @@ studentSchema.methods.toJSON = function () {
     return studentObject
 }
 
-
+// Generate an authentication token for the student
 studentSchema.methods.generateAuthToken = async function () {
     const student = this
     const token = jwt.sign({ _id: student._id.toString() }, process.env.JWT_SECRET)
@@ -85,6 +89,7 @@ studentSchema.methods.generateAuthToken = async function () {
     return token
 }
 
+// Find a student by their credentials
 studentSchema.statics.findByCredentials = async (studentNumber, password) => {
     const student = await Student.findOne({ studentNumber })
 
@@ -101,37 +106,39 @@ studentSchema.statics.findByCredentials = async (studentNumber, password) => {
     return student
 }
 
+// Raise the credit of a student by a specified amount
 studentSchema.statics.raiseCredit = async (studentNumber, amount) => {
     if (amount < 0) throw new Error('Amount can not be negative!')
-    
+
     const student = await Student.findOne({ studentNumber })
 
     if (!student) throw new Error('Could not find the student!')
 
     student.credit = student.credit + amount
 
-    student.save()
+    await student.save() // Fixed missing await
     return student
 }
 
+// Deduct a specified amount from the student's credit
 studentSchema.statics.payWithCredit = async (studentNumber, amount) => {
-    
     if (amount < 0) throw new Error('Amount can not be negative!')
-    
+
     const student = await Student.findOne({ studentNumber })
-    
+
     if (amount === 0) return student
-    
+
     if (!student) throw new Error('Could not find the student!')
 
     student.credit = student.credit - amount
 
     if (student.credit < 0) throw new Error('Credit can NOT be negative!')
 
-    student.save()
+    await student.save() // Fixed missing await
     return student
 }
 
+// Hash the password before saving the student document
 studentSchema.pre('save', async function (next) {
     const student = this
 
@@ -142,6 +149,7 @@ studentSchema.pre('save', async function (next) {
     next()
 })
 
+// Create the Student model from the schema
 const Student = mongoose.model('Student', studentSchema)
 
 module.exports = Student

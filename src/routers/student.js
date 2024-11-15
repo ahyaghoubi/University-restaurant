@@ -8,18 +8,21 @@ const Days = require('../models/days')
 const Payments = require('../models/payments')
 const router = new express.Router()
 
+// Load Persian locale for moment
 moment.loadPersian({dialect: 'persian-modern'})
 
+// Route for student login
 router.post('/api/student/login', async (req, res) => {
     try {
         const student = await Student.findByCredentials(req.body.studentNumber, req.body.password)
         const token = await student.generateAuthToken()
-        res.send({ firstName: student.firstName, lastName:student.lastName, token })
+        res.send({ firstName: student.firstName, lastName: student.lastName, token })
     } catch (e) {
         res.status(400).send()
     }
 })
 
+// Route for student logout
 router.post('/api/student/logout', studentAuth, async (req, res) => {
     try {
         req.student.tokens = []
@@ -30,6 +33,7 @@ router.post('/api/student/logout', studentAuth, async (req, res) => {
     }
 })
 
+// Route for fetching student profile
 router.get('/api/student', studentAuth, async (req, res) => {
     try {
         res.send(req.student)
@@ -38,6 +42,7 @@ router.get('/api/student', studentAuth, async (req, res) => {
     }
 })
 
+// Route for updating student password
 router.patch('/api/student', studentAuth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedUpdates = ['currentPass', 'newPass', 'repeatNewPass']
@@ -46,19 +51,17 @@ router.patch('/api/student', studentAuth, async (req, res) => {
         return res.status(400).send({ error: 'Invalid updates!' })
     }
     try {
-        if (!req.body.newPass === req.body.repeatNewPass) {
+        if (req.body.newPass !== req.body.repeatNewPass) {
             return res.status(400).send({ error: 'Passwords do NOT match!' })
         }
-        const student = await Student.findOne({ studnetNumber: req.student.studentNumber })
+        const student = await Student.findOne({ studentNumber: req.student.studentNumber })
         if (!student) {
-            throw new Error('Unable to fine student!')
+            throw new Error('Unable to find student!')
         }
         const isMatch = await bcrypt.compare(req.body.currentPass, student.password)
-        
         if (!isMatch) {
             throw new Error('Old password is wrong')
         }
-        
         student.password = req.body.newPass
         await student.save()
         res.send(student)
@@ -67,6 +70,7 @@ router.patch('/api/student', studentAuth, async (req, res) => {
     }
 })
 
+// Route for fetching available days
 router.get('/api/student/getdays', studentAuth, async (req, res) => {
     try {
         const days = await Days.find()
@@ -80,7 +84,7 @@ router.get('/api/student/getdays', studentAuth, async (req, res) => {
                     price: day.price,
                     date: day.date,
                     year: m.jYear(),
-                    month:m.format('jMMMM'),
+                    month: m.format('jMMMM'),
                     day: m.jDate(),
                     dow: m.format('dddd')
                 })
@@ -93,6 +97,7 @@ router.get('/api/student/getdays', studentAuth, async (req, res) => {
     }
 })
 
+// Route for placing orders
 router.post('/api/student/orders', studentAuth, async (req, res) => {
     try {
         const resSend = async (orderList) => {
@@ -111,11 +116,11 @@ router.post('/api/student/orders', studentAuth, async (req, res) => {
         req.body.listoforders.forEach(async (orderitem, index) => {
             try {
                 const day = await Days.findOne({ date: orderitem.date })
-                if(!day) return res.status(400).send('Day does not exsit!')
-                
+                if (!day) return res.status(400).send('Day does not exist!')
+
                 const existorder = await Orders.findOne({ date: orderitem.date, owner: req.student._id })
-                if (existorder) return res.status(400).send('Order Exist!')
-    
+                if (existorder) return res.status(400).send('Order exists!')
+
                 const order = new Orders({
                     description: day.description,
                     price: day.price,
@@ -153,7 +158,7 @@ router.post('/api/student/orders', studentAuth, async (req, res) => {
     }
 })
 
-// GET /api/student/orders?limit=10&skip=20
+// Route for fetching student orders with pagination
 router.get('/api/student/orders', studentAuth, async (req, res) => {
     try {
         const sort = {
@@ -177,7 +182,7 @@ router.get('/api/student/orders', studentAuth, async (req, res) => {
                     price: order.price,
                     date: order.date,
                     year: m.jYear(),
-                    month:m.format('jMMMM'),
+                    month: m.format('jMMMM'),
                     day: m.jDate(),
                     dow: m.format('dddd')
                 })
@@ -190,6 +195,7 @@ router.get('/api/student/orders', studentAuth, async (req, res) => {
     }
 })
 
+// Route for deleting a student order
 router.delete('/api/student/orders', studentAuth, async (req, res) => {
     try {
         const order = await Orders.findOne({
@@ -203,7 +209,7 @@ router.delete('/api/student/orders', studentAuth, async (req, res) => {
 
         const now = moment().unix()
         if ((order.date - now) < 172800) {
-            return res.status(400).send('You can not delete this order anymore!')
+            return res.status(400).send('You cannot delete this order anymore!')
         }
 
         await Orders.findOneAndDelete({
@@ -227,9 +233,9 @@ router.delete('/api/student/orders', studentAuth, async (req, res) => {
     } catch (e) {
         res.status(500).send(e)
     }
-
 })
 
+// Route for raising student credit
 router.post('/api/student/raisecredit', studentAuth, async (req, res) => {
     try {
         const student = await Student.raiseCredit(req.student.studentNumber, Number(req.body.amount))
@@ -246,7 +252,7 @@ router.post('/api/student/raisecredit', studentAuth, async (req, res) => {
     }
 })
 
-// GET /api/student/orders?limit=10&skip=20
+// Route for fetching student payments with pagination
 router.get('/api/student/payments', studentAuth, async (req, res) => {
     try {
         const sort = {

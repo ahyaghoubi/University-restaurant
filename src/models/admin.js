@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
+// Define the admin schema with fields and validation
 const adminSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -26,10 +27,11 @@ const adminSchema = new mongoose.Schema({
             required: true
         }
     }]
-},{
+}, {
     timestamps: true
 })
 
+// Remove sensitive information before sending the admin object
 adminSchema.methods.toJSON = function () {
     const admin = this
     const adminObject = admin.toObject()
@@ -40,7 +42,7 @@ adminSchema.methods.toJSON = function () {
     return adminObject
 }
 
-
+// Generate an authentication token for the admin
 adminSchema.methods.generateAuthToken = async function () {
     const admin = this
     const token = jwt.sign({ _id: admin._id.toString() }, process.env.JWT_SECRET)
@@ -51,6 +53,7 @@ adminSchema.methods.generateAuthToken = async function () {
     return token
 }
 
+// Find an admin by their credentials
 adminSchema.statics.findByCredentials = async (username, password) => {
     const admin = await Admin.findOne({ username })
 
@@ -67,6 +70,7 @@ adminSchema.statics.findByCredentials = async (username, password) => {
     return admin
 }
 
+// Hash the password before saving the admin document
 adminSchema.pre('save', async function (next) {
     const admin = this
 
@@ -77,6 +81,7 @@ adminSchema.pre('save', async function (next) {
     next()
 })
 
+// Create the Admin model from the schema
 const Admin = mongoose.model('Admin', adminSchema)
 
 module.exports = Admin

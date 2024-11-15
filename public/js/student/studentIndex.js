@@ -1,9 +1,15 @@
 'use strict'
 
-const studnentMainContent = document.querySelector('.studnentMainContent')
+// Select the main content area for student orders
+const studentMainContent = document.querySelector('.studentMainContent')
+
+// Select the title element for active days
 const activeDaysTitle = document.querySelector('#activeDaysTitle')
+
+// Initialize an empty array to store orders
 let orders = []
 
+// Function to delete an order by date
 const deleteOrder = (date) => {
     activeDaysTitle.textContent = 'ژتون های فعال شما'
     fetch('/api/student/orders', {
@@ -12,7 +18,7 @@ const deleteOrder = (date) => {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
         },
-        body: JSON.stringify({date})
+        body: JSON.stringify({ date })
     }).then(errorHandler).then((res) => res.json()).then((data) => {
         getOrders()
         renderStudentMessage()
@@ -22,6 +28,7 @@ const deleteOrder = (date) => {
     })
 }
 
+// Function to generate the DOM structure for a single order
 const generateOrderDOM = (order) => {
     const oneOrderDiv = document.createElement('div')
     oneOrderDiv.className = 'oneActiveOrder'
@@ -41,23 +48,25 @@ const generateOrderDOM = (order) => {
     return oneOrderDiv
 }
 
+// Function to render all orders in the main content area
 const renderOrders = () => {
-    if(!orders.length) {
-        studnentMainContent.textContent = ''
+    if (!orders.length) {
+        studentMainContent.textContent = ''
         const emptyOrderMessage = document.createElement('p')
         emptyOrderMessage.textContent = 'ژتون فعالی موجود نیست'
 
-        studnentMainContent.appendChild(emptyOrderMessage)
+        studentMainContent.appendChild(emptyOrderMessage)
     } else {
-        studnentMainContent.textContent = ''
+        studentMainContent.textContent = ''
         orders.forEach((order) => {
             const oneOrderDiv = generateOrderDOM(order)
-            studnentMainContent.appendChild(oneOrderDiv)
-            studnentMainContent.appendChild(document.createElement('br'))
+            studentMainContent.appendChild(oneOrderDiv)
+            studentMainContent.appendChild(document.createElement('br'))
         })
     }
 }
 
+// Function to fetch orders from the server
 const getOrders = () => {
     errorMessage(1, activeDaysTitle)
     fetch('/api/student/orders', {
@@ -74,4 +83,5 @@ const getOrders = () => {
     })
 }
 
+// Fetch and render orders on page load
 getOrders()

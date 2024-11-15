@@ -1,5 +1,6 @@
 'use strict'
 
+// Select elements for adding a new day
 const addDayTitle = document.querySelector('#addDayTitle')
 const dayAdd = document.querySelector('#day')
 const monthAdd = document.querySelector('#month')
@@ -9,6 +10,7 @@ const priceAdd = document.querySelector('#price')
 const capacityAdd = document.querySelector('#capacity')
 const addDayButton = document.querySelector('#addDayButton')
 
+// Select elements for editing an existing day
 const editDayTitle = document.querySelector('#editDayTitle')
 const daySelectorToEdit = document.querySelector('#daySelectorToEdit')
 const dayEdit = document.querySelector('#dayEdit')
@@ -19,23 +21,26 @@ const priceEdit = document.querySelector('#priceEdit')
 const capacityEdit = document.querySelector('#capacityEdit')
 const editDayButton = document.querySelector('#editDayButton')
 
+// Select elements for disabling a day
 const disableDayTitle = document.querySelector('#disableDayTitle')
 const daySelectorToDisable = document.querySelector('#daySelectorToDisable')
 const activeDayButton = document.querySelector('.activeDay')
 const disableDayButton = document.querySelector('.disableDay')
 
+// Select elements for deleting a day
 const deleteDayTitle = document.querySelector('#deleteDayTitle')
 const daySelectorToDelete = document.querySelector('#daySelectorToDelete')
 const DeleteDayButton = document.querySelector('.DeleteDay')
 
+// Initialize an array to store the list of days
 let days = []
 
+// Function to populate the day selectors with options
 const options = () => {
     days.forEach((day) => {
         const option = document.createElement('option')
         option.value = day.date
         option.textContent = `${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description}`
-
         daySelectorToDelete.appendChild(option)
     })
 
@@ -47,7 +52,6 @@ const options = () => {
         } else {
             option.textContent = `غیرفعال | ${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description}`
         }
-        
         daySelectorToDisable.appendChild(option)
     })
 
@@ -55,11 +59,11 @@ const options = () => {
         const option = document.createElement('option')
         option.value = day.date
         option.textContent = `${day.dow} ${day.day} ${day.month} ${day.year} - غذا: ${day.description}`
-
         daySelectorToEdit.appendChild(option)
     })
 }
 
+// Function to fetch the list of days from the server
 const getDays = () => {
     fetch('/api/admin/day', {
         method: 'GET',
@@ -75,8 +79,10 @@ const getDays = () => {
     })
 }
 
+// Fetch the list of days on page load
 getDays()
 
+// Event listener for selecting a day to edit
 let date = 0
 daySelectorToEdit.addEventListener('change', (e) => {
     date = e.target.value
@@ -97,6 +103,7 @@ daySelectorToEdit.addEventListener('change', (e) => {
     capacityEdit.value = day.capacity
 })
 
+// Function to edit a day
 const editDayFunc = (day) => {
     errorMessage(1, editDayTitle)
     fetch('/api/admin/day', {
@@ -120,6 +127,7 @@ const editDayFunc = (day) => {
     })
 }
 
+// Function to add a new day
 const addDayFunc = (day) => {
     errorMessage(1, addDayTitle)
     fetch('/api/admin/day', {
@@ -128,9 +136,7 @@ const addDayFunc = (day) => {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + adminToken
         },
-        body: JSON.stringify({
-            day
-        })
+        body: JSON.stringify(day) // Fixed bug: removed unnecessary object wrapping
     }).then(errorHandler).then((res) => res.json()).then((data) => {
         addDayTitle.textContent = 'اضافه کردن روز (روز با موفقیت اضافه شد)'
     }).catch((e) => {
@@ -143,9 +149,9 @@ const addDayFunc = (day) => {
         priceAdd.value = ''
         capacityAdd.value = ''
     })
-
 }
 
+// Event listener for adding a new day
 addDayButton.addEventListener('click', (e) => {
     let day = {}
     day.day = Number(dayAdd.value)
@@ -162,6 +168,7 @@ addDayButton.addEventListener('click', (e) => {
     }
 })
 
+// Event listener for editing a day
 editDayButton.addEventListener('click', (e) => {
     let day = {}
     day.day = Number(dayEdit.value)
@@ -179,11 +186,13 @@ editDayButton.addEventListener('click', (e) => {
     }
 })
 
+// Event listener for selecting a day to change its active status
 let dayToChangeActive = 0
 daySelectorToDisable.addEventListener('click', (e) => {
     dayToChangeActive = Number(e.target.value)
 })
 
+// Event listener for activating a day
 activeDayButton.addEventListener('click', (e) => {
     errorMessage(1, disableDayTitle)
     activeDayButton.disabled = true
@@ -206,6 +215,7 @@ activeDayButton.addEventListener('click', (e) => {
     })
 })
 
+// Event listener for deactivating a day
 disableDayButton.addEventListener('click', (e) => {
     errorMessage(1, disableDayTitle)
     disableDayButton.disabled = true
@@ -228,11 +238,13 @@ disableDayButton.addEventListener('click', (e) => {
     })
 })
 
+// Event listener for selecting a day to delete
 let dateToDelete = 0
 daySelectorToDelete.addEventListener('change', (e) => {
     dateToDelete = Number(e.target.value)
 })
 
+// Event listener for deleting a day
 DeleteDayButton.addEventListener('click', (e) => {
     errorMessage(1, deleteDayTitle)
     DeleteDayButton.disabled = true
